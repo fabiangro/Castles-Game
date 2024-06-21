@@ -25,6 +25,8 @@ class AntsGame:
 
     def start(self):
         self.has_started = True
+        self.start_turn = (self.start_turn + 1) % 2
+        self.turn = self.start_turn
         self.deal_cards()
 
     def deal_cards(self):
@@ -41,7 +43,7 @@ class AntsGame:
 
     def reset_game(self):
         self.start_turn = (self.start_turn + 1) % 2
-        self.turn = self.start_turn
+        # self.turn = self.start_turn
 
         for player in self.players.values():
             player.lost = False
