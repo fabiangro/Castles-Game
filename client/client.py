@@ -60,9 +60,10 @@ class Client:
 
     def draw_players(self):
         player_state = self.game_status["player_state"]
+        player_name = self.game_status["name"]
 
         player_lines = [
-            "Your resources:",
+            f"{player_name}'s resources:",
             f"builders: {player_state['builders']}",
             f"bricks: {player_state['bricks']}",
             "",
@@ -76,20 +77,26 @@ class Client:
             f"fence: {player_state['fence']}",
         ]
 
+        player_title_width, player_title_height = self.font.size(
+            f"{player_name}'s resources:")
         player_pos_x = 10
         player_pos_y = 10
         player_labels = []
+        player_x = []
 
         for line in player_lines:
+            player_x.append(self.font.size(line)[0])
             player_labels.append(self.font.render(line, True, (0, 0, 0)))
 
         for i, line in enumerate(player_labels):
-            self.window.blit(line, (player_pos_x, player_pos_y + 45*i))
+            x = player_pos_x + player_title_width // 2 - player_x[i] // 2
+            self.window.blit(line, (x, player_pos_y + 45*i))
 
         enemy_state = self.game_status["enemy_state"]
+        enemy_name = self.game_status["enemy_name"]
 
         enemy_lines = [
-            "Enemy resources:",
+            f"{enemy_name}'s resources:",
             f"builders: {enemy_state['builders']}",
             f"bricks: {enemy_state['bricks']}",
             "",
@@ -103,15 +110,20 @@ class Client:
             f"fence: {enemy_state['fence']}",
         ]
 
-        enemy_pos_x = 1020
+        enemy_title_width, enemy_title_height = self.font.size(
+            f"{enemy_name}'s resources:")
+        enemy_pos_x = gui.width - enemy_title_width - 10
         enemy_pos_y = 10
         enemy_labels = []
+        enemy_x = []
 
         for line in enemy_lines:
             enemy_labels.append(self.font.render(line, True, (0, 0, 0)))
+            enemy_x.append(self.font.size(line)[0])
 
         for i, line in enumerate(enemy_labels):
-            self.window.blit(line, (enemy_pos_x, enemy_pos_y + 45 * i))
+            x = enemy_pos_x + enemy_title_width//2 - enemy_x[i]//2
+            self.window.blit(line, (x, enemy_pos_y + 45 * i))
 
     def create_card_buttons(self):
         self.card_buttons = []
@@ -156,7 +168,7 @@ class Client:
         turn = self.font.render(text, True, self.text_color)
 
         text_width, text_height = self.font.size(text)
-        text_location = (gui.width//2 - text_width//2, gui.height - 40)
+        text_location = (gui.width//2 - text_width//2, gui.height - 60)
 
         self.window.blit(turn, text_location)
 
