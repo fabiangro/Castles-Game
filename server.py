@@ -41,7 +41,7 @@ class Server:
 
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         current_server = 'localhost'
-        print(f"Starting server on {current_server}")
+        print(f"Starting server on {current_server}:{self.server_port}")
         server_socket.bind((self.server_ip, self.server_port))
         server_socket.listen()
         print("Listening for clients...")

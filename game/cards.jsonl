@@ -1,0 +1,30 @@
+{"name": "Curse", "cost":{"crystals":  -25}, "player_effect":{"builders": 1, "bricks": 1,"soldiers": 1,"weapons": 1,"mages": 1,"crystals": 1,"castle": 1,"fence": 1}, "enemy_effect":{"builders": -1, "bricks": -1,"soldiers": -1,"weapons": -1,"mages": -1,"crystals": -1,"castle": -1,"fence": -1}, "desc":"all +1\nenemy's all -1"}
+{"name": "School", "cost":{"bricks": -8}, "player_effect":{"builders": 1}, "enemy_effect":{}, "desc":"builders +1"}
+{"name": "Recruit", "cost":{"weapons": -8}, "player_effect":{"soldiers": 1}, "enemy_effect":{}, "desc":"soldiers +1"}
+{"name": "Sorcerer", "cost":{"crystals": -8}, "player_effect":{"mages": 1}, "enemy_effect":{}, "desc":"mages +1"}
+{"name": "Pixies", "cost":{"crystals": -22}, "player_effect":{"castle": 22}, "enemy_effect":{}, "desc":"castle +22"}
+{"name": "Crush Crystals", "cost":{"crystals": -4}, "player_effect":{}, "enemy_effect":{"crystals": -8}, "desc":"enemy\ncrystals -8"}
+{"name": "Dragon", "cost":{"crystals": -21}, "player_effect":{}, "enemy_effect":{"damage": 25}, "desc":"attack 25"}
+{"name": "Fort", "cost":{"bricks": -18}, "player_effect":{"castle": 20}, "enemy_effect":{}, "desc":"castle +20"}
+{"name": "Banshee", "cost":{"weapons": -28}, "player_effect":{}, "enemy_effect":{"damage": 32}, "desc":"attack 32"}
+{"name": "Defense", "cost":{"bricks": -3}, "player_effect":{"fence": 6}, "enemy_effect":{}, "desc":"fence +6"}
+{"name": "Thief", "cost":{"weapons": -15}, "player_effect":{}, "enemy_effect":{"bricks": -5, "weapons": -5, "crystals": -5}, "desc":"take 5 from\neach enemy's\nstock"}
+{"name": "Knight", "cost":{"weapons": -2}, "player_effect":{}, "enemy_effect":{"damage": 3}, "desc":"attack 3"}
+{"name": "Wall", "cost":{"bricks": -1}, "player_effect":{"fence": 3}, "enemy_effect":{}, "desc":"fence +3"}
+{"name": "Fence", "cost":{"bricks": -12}, "player_effect":{"fence": 22}, "enemy_effect":{}, "desc":"fence +22"}
+{"name": "Saboteur", "cost":{"weapons": -12}, "player_effect":{}, "enemy_effect":{"bricks": -4, "weapons": -4,"crystals": -4}, "desc":"enemy\nstocks -4"}
+{"name": "Rider", "cost":{"weapons": -2}, "player_effect":{}, "enemy_effect":{"damage": 4}, "desc":"attack 4"}
+{"name": "Crush Weapons", "cost":{"crystals": -4}, "player_effect":{}, "enemy_effect":{"weapons": -8}, "desc":"enemy\nweapons -8"}
+{"name": "Swat", "cost":{"weapons": -18}, "player_effect":{}, "enemy_effect":{"castle": -10}, "desc":"enemy's\ncastle -10"}
+{"name": "Attack", "cost":{"weapons": -10}, "player_effect":{}, "enemy_effect":{"damage": 12}, "desc":"attack 12"}
+{"name": "Reserve", "cost":{"bricks": -3}, "player_effect":{"castle": 8, "fence": -4}, "enemy_effect":{}, "desc":"castle +8\nfence -4"}
+{"name": "Wain", "cost":{"bricks": -10}, "player_effect":{"castle": 8}, "enemy_effect":{"castle": -4}, "desc":"castle +8\nen. castle -4"}
+{"name": "Crush Bricks", "cost":{"crystals": -4}, "player_effect":{}, "enemy_effect":{"bricks": -8}, "desc":"enemy\nbricks -8"}
+{"name": "Platoon", "cost":{"weapons": -4}, "player_effect":{}, "enemy_effect":{"damage": 6}, "desc":"attack 6"}
+{"name": "Tower", "cost":{"bricks": -5}, "player_effect":{"castle": 5}, "enemy_effect":{}, "desc":"castle +5"}
+{"name": "Conjure Crystals", "cost":{"crystals": -4}, "player_effect":{"crystals": 8}, "enemy_effect":{}, "desc":"crystals +8"}
+{"name": "Archer", "cost":{"weapons": -1}, "player_effect":{}, "enemy_effect":{"damage": 2}, "desc":"attack 2"}
+{"name": "Base", "cost":{"bricks": -1}, "player_effect":{"castle": 3}, "enemy_effect":{}, "desc":"castle +3"}
+{"name": "Conjure Weapons", "cost":{"crystals": -4}, "player_effect":{"weapons": 8}, "enemy_effect":{}, "desc":"weapons +8"}
+{"name": "Conjure Bricks", "cost":{"crystals": -4}, "player_effect":{"bricks": 8}, "enemy_effect":{}, "desc":"bricks +8"}
+{"name": "Babylon", "cost":{"bricks": -39}, "player_effect":{"castle": 32}, "enemy_effect":{}, "desc":"castle +32"}

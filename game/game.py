@@ -1,21 +1,29 @@
+import json
 from random import choice
+from copy import deepcopy
 from .player import Player
 from .card import Card
 
 
 class AntsGame:
     player_cards = 8
+
     def __init__(self):
         self.players = dict()
         self.turn = 0
         self.start_turn = 0
         self.has_started = False
         self.win = False
-        self.cards = []
         self.debug_last_action = ""
+        self.cards = []
+        with open("game/cards.jsonl") as file:
+            for line in file:
+                c = json.loads(line)
+                card = Card(c["name"], c["cost"],
+                            c["player_effect"], c["enemy_effect"])
+                self.cards.append(card)
 
     def start(self):
-        self.init_cards()
         self.has_started = True
         self.deal_cards()
 
@@ -37,12 +45,26 @@ class AntsGame:
 
         for player in self.players.values():
             player.lost = False
-            player.resources = Player.STARTING_RESOURCES
+            player.resources = deepcopy(Player.STARTING_RESOURCES)
 
         self.reset_turn()
 
+    def player_use_card(self, current_player, enemy_player, card):
+        current_player.update_state(card.cost)
+        if card.name == "Thief":
+            card.player_effect["bricks"] = min(
+                enemy_player.resources["bricks"], 5)
+            card.player_effect["weapons"] = min(
+                enemy_player.resources["weapons"], 5)
+            card.player_effect["crystals"] = min(
+                enemy_player.resources["crystals"], 5)
+
+        current_player.update_state(card.player_effect)
+        enemy_player.update_state(card.enemy_effect)
+
     def reset_turn(self):
         self.win = False
+        self.has_started = False
         self.empty_hands()
         for player in self.players.values():
             player.ready = False
@@ -51,11 +73,17 @@ class AntsGame:
         for player in self.players.values():
             player.hand = []
 
-    def next_turn(self):
+    def next_turn(self, player, enemy):
         self.turn = (self.turn + 1) % 2
 
+        if enemy.lost:
+            self.win = player.name
+        else:
+            enemy.resources_turn()
+
     def ready_players(self):
-        return len([player for player in self.players.values() if player.ready])
+        return len(
+            [player for player in self.players.values() if player.ready])
 
     def players_are_ready(self):
         if len(self.players) < 2:
@@ -66,25 +94,8 @@ class AntsGame:
         return True
 
     def player_action(self, player_id, action: str):
-
-
         current_player = self.players[player_id]
         enemy_player = self.get_enemy_player(player_id)
-
-        if action != self.debug_last_action and current_player and enemy_player and action != 'get':
-
-            print(f"id={player_id} name={current_player.name} action=|{action}|")
-            for player in self.players.values():
-                print(player.resources)
-            print()
-            # self.debug_last_action = action
-            # print(f"curr player:")
-            # print(current_player.name)
-            # print(current_player.resources)
-            # print()
-            # print(f"enem player:")
-            # print(enemy_player.name)
-            # print(enemy_player.resources)
 
         if self.win:
             if action == "start":
@@ -108,40 +119,45 @@ class AntsGame:
 
             return self.get_game_status(current_player)
 
-        elif current_player.lost:
-            pass
-
         elif self.player_index_by_id(player_id) != self.turn:
             pass
 
         elif action == "get":
-            pass
-
-        elif action.startswith("use"):
-            used_card_index = int(action.split()[1])
-            used_card = current_player.hand(used_card_index)
-
-            if current_player.can_be_played(used_card):
-                current_player.update_state(used_card.player_effect)
-                enemy_player.update_state(used_card.enemy_effect)
-
-                current_player.hand[used_card_index] = choice(self.cards)
-                enemy_player.resources_turn()
-                self.next_turn()
+            return self.get_game_status(current_player)
 
         elif action.startswith("skip"):
-            enemy_player.resources_turn()
-            self.next_turn()
+            self.next_turn(current_player, enemy_player)
 
-        elif action.startswith("replace"):
-            used_card_index = int(action.split()[1])
-            current_player.hand[used_card_index] = choice(self.cards)
-            enemy_player.resources_turn()
-            self.next_turn()
+        elif action.startswith("move"):
+            action = action.split()
+
+            if "use" in action:
+                used_card_index = int(action[-1])
+                used_card = current_player.hand[used_card_index]
+
+                if current_player.can_be_played(used_card):
+                    self.player_use_card(current_player, enemy_player,
+                                         used_card)
+
+                    current_player.hand[used_card_index] = choice(self.cards)
+                    self.next_turn(current_player, enemy_player)
+                else:
+                    pass
+
+            elif "replace" in action:
+                used_card_index = int(action[-1])
+                current_player.hand[used_card_index] = choice(self.cards)
+                self.next_turn(current_player, enemy_player)
+
+            else:
+                print(f"unexpected action value={action}")
+
+        else:
+            print(f"unexpected action value={action}")
 
         return self.get_game_status(current_player)
 
-    def is_full(self) -> bool:
+    def is_full(self):
         return len(self.players) == 2
 
     def get_game_status(self, current_player):
@@ -155,11 +171,7 @@ class AntsGame:
             "lost": current_player.lost,
             "name": current_player.name,
             "enemy_name": enemy_player.name if enemy_player else None,
-            "hand": [({
-                        "name": card.name,
-                        "player_effect": card.player_effect,
-                        "enemy_effect": card.enemy_effect
-                      }, current_player.can_be_played(card))
+            "hand": [({"name": card.name}, current_player.can_be_played(card))
                      for card in current_player.hand],
             "win": self.win,
             "player_state": current_player.resources,
@@ -167,15 +179,12 @@ class AntsGame:
             "turn": self.turn == self.player_index_by_player(current_player),
             "ready": f"Waiting for players {self.ready_players()}/2",
         }
-        if enemy_player:
-            game_status["players"] = [(enemy_player.name, enemy_player.resources)]
         return game_status
 
     def get_enemy_player(self, current_player_id):
         for player_id in self.players:
             if player_id != current_player_id:
                 return self.players[player_id]
-
 
     def player_index_by_id(self, player_id: int) -> int:
 
@@ -188,229 +197,3 @@ class AntsGame:
         for index, name in enumerate(self.players.values()):
             if name is player:
                 return index
-
-
-
-    def init_cards(self):
-        self.cards = [
-            Card("builderplus",
-                {
-                "builders": 1,
-                "soldiers": 0,
-                "mages": 0,
-
-                "bricks": 0,
-                "weapons": 0,
-                "crystals": 0,
-
-                "castle": 0,
-                "fence": 0,
-
-                "damage": 0
-            },
-            {
-                "builders": 0,
-                "soldiers": 0,
-                "mages": 0,
-
-                "bricks": 0,
-                "weapons": 0,
-                "crystals": 0,
-
-                "castle": 0,
-                "fence": 0,
-
-                "damage": 0
-                }),
-            Card("curse",
-                 {
-                     "builders": 1,
-                     "soldiers": 1,
-                     "mages": 1,
-
-                     "bricks": 1,
-                     "weapons": 1,
-                     "crystals": 1,
-
-                     "castle": 1,
-                     "fence": 1,
-
-                     "damage": 1
-                 },
-                 {
-                     "builders": -1,
-                     "soldiers": -1,
-                     "mages": -1,
-
-                     "bricks": -1,
-                     "weapons": -1,
-                     "crystals": -1,
-
-                     "castle": -1,
-                     "fence": -1,
-
-                     "damage": -1
-                 }),
-            Card("chuj",
-                 {
-                     "builders": 0,
-                     "soldiers": 0,
-                     "mages": 0,
-
-                     "bricks": 0,
-                     "weapons": 0,
-                     "crystals": 0,
-
-                     "castle": 8,
-                     "fence": 0,
-
-                     "damage": 0
-                 },
-                 {
-                     "builders": 0,
-                     "soldiers": 0,
-                     "mages": 0,
-
-                     "bricks": 0,
-                     "weapons": 0,
-                     "crystals": 0,
-
-                     "castle": -4,
-                     "fence": 0,
-
-                     "damage": 0
-                 }),
-            Card("name",
-                 {
-                     "builders": 0,
-                     "soldiers": 0,
-                     "mages": 0,
-
-                     "bricks": 0,
-                     "weapons": 0,
-                     "crystals": 0,
-
-                     "castle": 8,
-                     "fence": -4,
-
-                     "damage": 0
-                 },
-                 {
-                     "builders": 0,
-                     "soldiers": 0,
-                     "mages": 0,
-
-                     "bricks": 0,
-                     "weapons": 0,
-                     "crystals": 0,
-
-                     "castle": 0,
-                     "fence": 0,
-
-                     "damage": 0
-                 }),
-            Card("enemystock",
-                 {
-                     "builders": 0,
-                     "soldiers": 0,
-                     "mages": 0,
-
-                     "bricks": 0,
-                     "weapons": -12,
-                     "crystals": 0,
-
-                     "castle": 0,
-                     "fence": 0,
-
-                     "damage": 0
-                 },
-                 {
-                     "builders": 0,
-                     "soldiers": 0,
-                     "mages": 0,
-
-                     "bricks": -12,
-                     "weapons": -12,
-                     "crystals": -12,
-
-                     "castle": 0,
-                     "fence": 0,
-
-                     "damage": 0
-                 }),
-            Card("name",
-                 {
-                     "builders": 0,
-                     "soldiers": 0,
-                     "mages": 0,
-
-                     "bricks": 0,
-                     "weapons": 0,
-                     "crystals": 0,
-
-                     "castle": 0,
-                     "fence": 0,
-
-                     "damage": 0
-                 },
-                 {
-                     "builders": 0,
-                     "soldiers": 0,
-                     "mages": 0,
-
-                     "bricks": 0,
-                     "weapons": 0,
-                     "crystals": 0,
-
-                     "castle": 0,
-                     "fence": 0,
-
-                     "damage": 0
-                 }),
-            Card("katachuj",
-                 {
-                     "builders": 0,
-                     "soldiers": 0,
-                     "mages": 0,
-
-                     "bricks": 0,
-                     "weapons": 12,
-
-                     "castle": 0,
-                     "fence": 0,
-
-                     "damage": 0
-                 },
-                 {
-                     "builders": 0,
-                     "soldiers": 0,
-                     "mages": 0,
-
-                     "bricks": 0,
-                     "weapons": 0,
-                     "crystals": 0,
-
-                     "castle": 0,
-                     "fence": 0,
-
-                     "damage": 10
-                 }),
-        ]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
