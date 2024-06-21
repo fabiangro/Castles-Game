@@ -242,7 +242,7 @@ class Client:
         pygame.font.init()
         self.font = pygame.font.SysFont('arial', 30, bold=True)
 
-        self.start_button = gui.OptionBox(gui.width - 220, 40,
+        self.start_button = gui.OptionBox(gui.width//2 - 100, 50,
                                           200, 40, (150, 150, 150),
                                           (100, 200, 255), self.font,
                                           ["Ready?", "Start", "Wait"])
