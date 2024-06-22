@@ -12,8 +12,8 @@ class Player:
         "fence": 10
     }
 
-    def __init__(self, id):
-        self.id = id
+    def __init__(self, player_id):
+        self.id = player_id
         self.lost = False
         self.name = ""
         self.ready = False

@@ -23,7 +23,7 @@ if __name__ == '__main__':
     if not is_port_in_use(SERVER_PORT):
         SERVER_PORT += 1
     server_process = start_server(SERVER_IP, SERVER_PORT)
-    time.sleep(1)
+    time.sleep(0.5)
 
     client1_process = start_client(SERVER_IP, SERVER_PORT, 'client1')
     client2_process = start_client(SERVER_IP, SERVER_PORT, 'client2')

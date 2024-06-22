@@ -35,6 +35,10 @@ class CardButton:
 
 
 class Client:
+    CARD_WIDTH = 140
+    CARD_HEIGHT = 190
+    CARD_SIZE = (CARD_WIDTH, CARD_HEIGHT)
+
     def __init__(self, name: str = 'Player', ip='localhost', port=5555):
         #: The name of the player using the client.
         self.name = name[0:8]
@@ -129,11 +133,12 @@ class Client:
         self.card_buttons = []
         cards_width = 8 * 140 + 7*10
         cards_start_pos = gui.width//2 - cards_width//2
-        for i, (card, can_be_used) in enumerate(self.game_status["hand"]):
+        for i, card in enumerate(self.game_status["hand"]):
             card_name = card["name"]
+            can_be_used = card["can_be_used"]
             image_path = f'assets/{card_name}.png'
             pos = (cards_start_pos + i * 150, gui.height - 300)
-            card_button = CardButton(image_path, pos)
+            card_button = CardButton(image_path, pos, Client.CARD_SIZE)
             card_button.can_be_used = can_be_used
             self.card_buttons.append(card_button)
 
@@ -173,19 +178,11 @@ class Client:
         self.window.blit(turn, text_location)
 
     def draw_all(self):
-        if self.game_status == "Game did not start yet":
-            self.window.blit(gui.background_image, (0, 0))
-            pygame.display.update()
-            return
-
-        if isinstance(self.game_status, str) and self.game_status.startswith(
-                "End of Game"):
-            pass
-
         self.draw_card_buttons()
         self.draw_players()
         self.draw_castles()
         self.draw_skip_button()
+        self.draw_last_used_card()
         self.draw_turn()
         pygame.display.update()
 
@@ -208,9 +205,27 @@ class Client:
     def draw_who_win(self) -> None:
         text_location = (gui.width // 2 - 100, gui.height - 90)
 
-        text = f"The game has ended, the player {self.game_status['win']} has won!"
+        text = (f"The game has ended, the player "
+                f"{self.game_status['win']} has won!")
         win = self.font.render(text, True, self.text_color)
         self.window.blit(win, text_location)
+
+    def draw_last_used_card(self):
+        card = self.game_status["last_used"]
+        if card:
+            card_name = card["name"]
+            image = pygame.image.load(f"assets/{card_name}.png")
+            image = pygame.transform.scale(image, Client.CARD_SIZE)
+
+            self.window.blit(image, (gui.width//2 - Client.CARD_WIDTH//2, 100))
+
+            if card["action"] == "replace":
+                font = pygame.font.SysFont('arial', 28, bold=True)
+                discard_text = font.render("DISCARD", True, (255, 0, 0))
+                discard_text.set_alpha(127)
+                width = font.size("DISCARD")[0]
+                pos = (gui.width//2 - width//2, 100 + Client.CARD_HEIGHT // 2)
+                self.window.blit(discard_text, pos)
 
     def draw_castles(self):
         player_height = max(1, self.game_status["player_state"]["castle"] / 100 * 400)
