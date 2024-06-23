@@ -77,6 +77,8 @@ class AntsGame:
     def next_turn(self, player, enemy):
         self.turn = (self.turn + 1) % 2
 
+        if player.resources["castle"] == 100:
+            enemy.lost = True
         if enemy.lost:
             self.win = player.name
         else:

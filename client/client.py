@@ -279,7 +279,10 @@ class Client:
     def start(self, ip='localhost', port=5556):
         """Initialize gui and connection to the server, and run the game.
         """
+        icon = pygame.image.load("assets/castle.png")
+        icon = pygame.transform.scale(icon, (32, 32))
 
+        pygame.display.set_icon(icon)
         pygame.display.set_caption(gui.title)
         pygame.font.init()
         self.font = pygame.font.SysFont('arial', self.font_size, bold=True)
@@ -317,7 +320,8 @@ class Client:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     return
-                elif event.type in [pygame.WINDOWRESIZED]:
+                elif event.type in [pygame.WINDOWRESIZED,
+                                    pygame.WINDOWSIZECHANGED]:
                     w, h = event.x, event.y
                     self.background = pygame.transform.scale(self.bg_image,
                                                              (w, h))
@@ -336,6 +340,7 @@ class Client:
                             action[0] = f"move {clicked_card}"
                         else:
                             action[0] = "get"
+
             self.window.blit(self.background, (0, 0))
 
             if not game_status["start"]:

@@ -68,3 +68,4 @@ class Player:
                 self.resources[resource] = 1
 
         self.lost = self.resources["castle"] == 0
+        self.resources["castle"] = min(100, self.resources["castle"])
