@@ -16,6 +16,7 @@ class AntsGame:
         self.win = False
         self.debug_last_action = ""
         self.cards = []
+        self.last_used_card = None
         with open("game/cards.jsonl") as file:
             for line in file:
                 c = json.loads(line)
@@ -42,8 +43,8 @@ class AntsGame:
         del self.players[player_id]
 
     def reset_game(self):
+        self.last_used_card = None
         self.start_turn = (self.start_turn + 1) % 2
-        # self.turn = self.start_turn
 
         for player in self.players.values():
             player.lost = False
@@ -53,13 +54,11 @@ class AntsGame:
 
     def player_use_card(self, current_player, enemy_player, card):
         current_player.update_state(card.cost)
-        if card.name == "Thief":
-            card.player_effect["bricks"] = min(
-                enemy_player.resources["bricks"], 5)
-            card.player_effect["weapons"] = min(
-                enemy_player.resources["weapons"], 5)
-            card.player_effect["crystals"] = min(
-                enemy_player.resources["crystals"], 5)
+
+        if card.name == "Thief":  # only card using enemy resources
+            # steal no more than 5 from each enemy resource
+            for res in ["bricks", "weapons", "crystals"]:
+                card.player_effect[res] = min(enemy_player.resources[res], 5)
 
         current_player.update_state(card.player_effect)
         enemy_player.update_state(card.enemy_effect)
@@ -78,6 +77,8 @@ class AntsGame:
     def next_turn(self, player, enemy):
         self.turn = (self.turn + 1) % 2
 
+        if player.resources["castle"] == 100:
+            enemy.lost = True
         if enemy.lost:
             self.win = player.name
         else:
@@ -133,27 +134,20 @@ class AntsGame:
         elif action.startswith("move"):
             action = action.split()
 
-            if "use" in action:
-                used_card_index = int(action[-1])
-                used_card = current_player.hand[used_card_index]
-
-                if current_player.can_be_played(used_card):
-                    self.player_use_card(current_player, enemy_player,
-                                         used_card)
-
-                    current_player.hand[used_card_index] = choice(self.cards)
-                    self.next_turn(current_player, enemy_player)
-                else:
-                    pass
-
-            elif "replace" in action:
-                used_card_index = int(action[-1])
-                current_player.hand[used_card_index] = choice(self.cards)
-                self.next_turn(current_player, enemy_player)
-
+            action_type = action[1]  # 'use' or 'replace'
+            card_index = int(action[2])  # card index from current player hand
+            card = current_player.hand[card_index]
+            if action_type == "use" and current_player.can_be_played(card):
+                self.player_use_card(current_player, enemy_player, card)
+            elif action_type == "replace":
+                pass
             else:
-                print(f"unexpected action value={action}")
+                # unexpected action, e.g. card cannot be played
+                return self.get_game_status(current_player)
 
+            self.last_used_card = {"name": card.name, "action": action_type}
+            current_player.hand[card_index] = choice(self.cards)
+            self.next_turn(current_player, enemy_player)
         else:
             print(f"unexpected action value={action}")
 
@@ -170,16 +164,18 @@ class AntsGame:
 
         game_status = {
             "start": self.has_started,
-            "lost": current_player.lost,
-            "name": current_player.name,
-            "enemy_name": enemy_player.name if enemy_player else None,
-            "hand": [({"name": card.name}, current_player.can_be_played(card))
-                     for card in current_player.hand],
             "win": self.win,
-            "player_state": current_player.resources,
-            "enemy_state": enemy_player.resources if enemy_player else None,
+            "lost": current_player.lost,
             "turn": self.turn == self.player_index_by_player(current_player),
-            "ready": f"Waiting for players {self.ready_players()}/2",
+            "player": {"state": current_player.resources,
+                       "name": current_player.name},
+            "enemy": {"state": enemy_player.resources if enemy_player else None,
+                      "name": enemy_player.name if enemy_player else None},
+            "hand": [{"name": card.name,
+                      "can_be_used": current_player.can_be_played(card)}
+                     for card in current_player.hand],
+            "last_used": self.last_used_card,
+            "ready": f"Waiting for players {self.ready_players()}/2"
         }
         return game_status
 
@@ -190,8 +186,8 @@ class AntsGame:
 
     def player_index_by_id(self, player_id: int) -> int:
 
-        for index, id in enumerate(self.players.keys()):
-            if id == player_id:
+        for index, id_ in enumerate(self.players.keys()):
+            if id_ == player_id:
                 return index
 
     def player_index_by_player(self, player: Player) -> int:

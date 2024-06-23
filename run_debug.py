@@ -18,12 +18,15 @@ def start_client(ip, port, name):
 
 if __name__ == '__main__':
     SERVER_IP = 'localhost'
-    SERVER_PORT = 5555
+    SERVER_PORT = 5554
 
     if not is_port_in_use(SERVER_PORT):
         SERVER_PORT += 1
-    server_process = start_server(SERVER_IP, SERVER_PORT)
-    time.sleep(1)
+    try:
+        server_process = start_server(SERVER_IP, SERVER_PORT)
+    except:
+        server_process = start_server(SERVER_IP, SERVER_PORT+1)
+    time.sleep(0.5)
 
     client1_process = start_client(SERVER_IP, SERVER_PORT, 'client1')
     client2_process = start_client(SERVER_IP, SERVER_PORT, 'client2')

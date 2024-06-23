@@ -1,9 +1,25 @@
-# from game import Deck
 import pygame
 
 
+title = "Ants Game"
+width, height = 1288, 912
+fps = 60
+
+card_size = (100, 140)
+free_space = 30
+
+button_size = (150, 60)
+skip_button_location = free_space, height - button_size[1] - free_space
+
+background_image = pygame.image.load('assets/background.jpg')
+
+skip_button_image = pygame.image.load('assets/skip.png')
+skip_button_image = pygame.transform.scale(skip_button_image, button_size)
+
+
 class OptionBox:
-    def __init__(self, x, y, w, h, color, highlight_color, font, option_list, selected=0):
+    def __init__(self, x, y, w, h, color, highlight_color,
+                 font, option_list, selected=0):
         self.color = color
         self.highlight_color = highlight_color
         self.rect = pygame.Rect(x, y, w, h)
@@ -64,34 +80,3 @@ class OptionBox:
                     self.draw_menu = False
                     return self.option_list[self.active_option]
         return -1
-
-
-title = "Ants Game"
-width, height = 1288, 912
-fps = 60
-
-card_size = (100, 140)
-free_space = 30
-player_cards_y = height - card_size[1] - 45
-
-button_size = (150, 60)
-button_check_location = free_space, height - button_size[1] - free_space
-button_check_location2 = width - button_size[0] - free_space * 2, height - button_size[1] - free_space
-
-font_size = 45
-
-background_image = pygame.image.load('assets/grass.jpg')
-
-skip_button_image = pygame.image.load('assets/skip.png')
-skip_button_image = pygame.transform.scale(skip_button_image, button_size)
-
-show_button_image = pygame.image.load('assets/show.png')
-show_button_image = pygame.transform.scale(show_button_image, button_size)
-
-button_checked_image = pygame.image.load('assets/checked_button.jpg')
-button_checked_image = pygame.transform.scale(button_checked_image, button_size)
-
-card_reverse = pygame.image.load('assets/reverse.jpg')
-card_reverse = pygame.transform.scale(card_reverse, card_size)
-
-

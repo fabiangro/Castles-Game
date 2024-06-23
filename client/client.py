@@ -35,6 +35,10 @@ class CardButton:
 
 
 class Client:
+    CARD_WIDTH = 140
+    CARD_HEIGHT = 190
+    CARD_SIZE = (CARD_WIDTH, CARD_HEIGHT)
+
     def __init__(self, name: str = 'Player', ip='localhost', port=5555):
         #: The name of the player using the client.
         self.name = name[0:8]
@@ -45,95 +49,86 @@ class Client:
         self.game_status = None
 
         #: The pygame display window.
-        self.window = pygame.display.set_mode(
-            (gui.width, gui.height))  # pygame.RESIZABLE maybe todo?
-
+        self.window = pygame.display.set_mode((gui.width, gui.height),
+                                             pygame.RESIZABLE, 0)  # pygame.RESIZABLE maybe todo?
+        self.bg_image = pygame.image.load('assets/bg.jpg')
+        self.background = pygame.transform.scale(self.bg_image, (gui.width, gui.height))
         #: The font used for text rendering.
         self.font = None
 
         #: The color used for text displaying.
         self.text_color = (255, 255, 255)
+        self.font_size = 30
 
         #: The button used to determine if player is ready.
         self.start_button = None
         self.card_buttons = []
 
-    def draw_players(self):
-        player_state = self.game_status["player_state"]
-        player_name = self.game_status["name"]
-
+    def draw_player_stocks(self, player_state, pos, title_width):
         player_lines = [
-            f"{player_name}'s resources:",
-            f"builders: {player_state['builders']}",
-            f"bricks: {player_state['bricks']}",
+            f"BUILDERS: {player_state['builders']}",
+            f"Bricks: {player_state['bricks']}",
             "",
-            f"soldiers: {player_state['soldiers']}",
-            f"weapons: {player_state['weapons']}",
+            f"SOLDIERS: {player_state['soldiers']}",
+            f"Weapons: {player_state['weapons']}",
             "",
-            f"mages: {player_state['mages']}",
-            f"crystals: {player_state['crystals']}",
+            f"MAGES: {player_state['mages']}",
+            f"Crystals: {player_state['crystals']}",
             "",
-            f"castle: {player_state['castle']}",
-            f"fence: {player_state['fence']}",
+            f"Castle: {player_state['castle']}",
+            f"Fence: {player_state['fence']}",
         ]
+        player_pos_x, player_pos_y = pos
 
-        player_title_width, player_title_height = self.font.size(
-            f"{player_name}'s resources:")
-        player_pos_x = 10
-        player_pos_y = 10
-        player_labels = []
-        player_x = []
+        for i, line in enumerate(player_lines):
+            text = self.font.render(line, True, (0, 0, 0))
+            line_width, line_height = self.font.size(line)
+            x = player_pos_x + title_width // 2 - line_width // 2
+            y = player_pos_y + 40 * (i + 1)
 
-        for line in player_lines:
-            player_x.append(self.font.size(line)[0])
-            player_labels.append(self.font.render(line, True, (0, 0, 0)))
+            if line.split(":")[0] in ["Bricks", "Weapons", "Crystals"]:
+                res = line.split(":")[0].lower()
+                image = pygame.image.load(f"assets/{res}.png")
+                image = pygame.transform.scale(image,
+                                               (line_height, line_height))
+                pos = (
+                    player_pos_x + title_width // 2 + line_width // 2 + 3, y)
+                self.window.blit(image, pos)
 
-        for i, line in enumerate(player_labels):
-            x = player_pos_x + player_title_width // 2 - player_x[i] // 2
-            self.window.blit(line, (x, player_pos_y + 45*i))
+            self.window.blit(text, (x, y))
 
-        enemy_state = self.game_status["enemy_state"]
-        enemy_name = self.game_status["enemy_name"]
+    def draw_players(self):
+        gap = 16
+        if self.game_status["enemy"]:
+            for player in ["player", "enemy"]:
+                name = self.game_status[player]["name"]
+                state = self.game_status[player]["state"]
 
-        enemy_lines = [
-            f"{enemy_name}'s resources:",
-            f"builders: {enemy_state['builders']}",
-            f"bricks: {enemy_state['bricks']}",
-            "",
-            f"soldiers: {enemy_state['soldiers']}",
-            f"weapons: {enemy_state['weapons']}",
-            "",
-            f"mages: {enemy_state['mages']}",
-            f"crystals: {enemy_state['crystals']}",
-            "",
-            f"castle: {enemy_state['castle']}",
-            f"fence: {enemy_state['fence']}",
-        ]
+                font = pygame.font.SysFont('arial', int(self.font_size * 1.25),
+                                           bold=True)
+                title_text = f"{name}'s resources"
+                title = font.render(title_text, True, (255, 0, 0))
+                t_width, t_height = font.size(title_text)
 
-        enemy_title_width, enemy_title_height = self.font.size(
-            f"{enemy_name}'s resources:")
-        enemy_pos_x = gui.width - enemy_title_width - 10
-        enemy_pos_y = 10
-        enemy_labels = []
-        enemy_x = []
-
-        for line in enemy_lines:
-            enemy_labels.append(self.font.render(line, True, (0, 0, 0)))
-            enemy_x.append(self.font.size(line)[0])
-
-        for i, line in enumerate(enemy_labels):
-            x = enemy_pos_x + enemy_title_width//2 - enemy_x[i]//2
-            self.window.blit(line, (x, enemy_pos_y + 45 * i))
+                # current player on the left, enemy on the right:
+                x = gap if player == "player" else self.window.get_width() - gap - t_width
+                y = gap
+                self.window.blit(title, (x, y))
+                self.draw_player_stocks(state, (x, y + t_height), t_width)
 
     def create_card_buttons(self):
         self.card_buttons = []
-        cards_width = 8 * 140 + 7*10
-        cards_start_pos = gui.width//2 - cards_width//2
-        for i, (card, can_be_used) in enumerate(self.game_status["hand"]):
+        gap = (self.window.get_width()//50)
+        cards_width = 8 * Client.CARD_WIDTH + 7 * gap
+        cards_start_pos = self.window.get_width() // 2 - cards_width // 2
+
+        for i, card in enumerate(self.game_status["hand"]):
             card_name = card["name"]
-            image_path = f'assets/{card_name}.png'
-            pos = (cards_start_pos + i * 150, gui.height - 300)
-            card_button = CardButton(image_path, pos)
+            can_be_used = card["can_be_used"]
+            image_path = f'assets/cards/{card_name}.png'
+            pos = (cards_start_pos + i * Client.CARD_WIDTH + i*gap,
+                   self.window.get_height() - 300)
+            card_button = CardButton(image_path, pos, Client.CARD_SIZE)
             card_button.can_be_used = can_be_used
             self.card_buttons.append(card_button)
 
@@ -153,7 +148,7 @@ class Client:
         return None
 
     def draw_skip_button(self):
-        self.window.blit(gui.skip_button_image, gui.button_check_location)
+        self.window.blit(gui.skip_button_image, gui.skip_button_location)
 
     def handle_mouse_motion(self, mouse_pos):
         for card_button in self.card_buttons:
@@ -163,29 +158,23 @@ class Client:
                 card_button.unhighlight()
 
     def draw_turn(self):
-        text = "Your turn" if self.game_status[
-            "turn"] else f"{self.game_status['enemy_name']}'s turn"
+        text = "Your turn" if self.game_status["turn"] \
+            else f"{self.game_status['enemy']['name']}'s turn"
+
         turn = self.font.render(text, True, self.text_color)
 
         text_width, text_height = self.font.size(text)
-        text_location = (gui.width//2 - text_width//2, gui.height - 60)
+        text_location = (self.window.get_width() // 2 - text_width // 2,
+                         self.window.get_height() - 60)
 
         self.window.blit(turn, text_location)
 
     def draw_all(self):
-        if self.game_status == "Game did not start yet":
-            self.window.blit(gui.background_image, (0, 0))
-            pygame.display.update()
-            return
-
-        if isinstance(self.game_status, str) and self.game_status.startswith(
-                "End of Game"):
-            pass
-
         self.draw_card_buttons()
         self.draw_players()
         self.draw_castles()
         self.draw_skip_button()
+        self.draw_last_used_card()
         self.draw_turn()
         pygame.display.update()
 
@@ -195,53 +184,94 @@ class Client:
         turn = font.render(text, True, self.text_color)
 
         text_width, text_height = font.size(text)
-        text_location = (gui.width // 2 - text_width // 2,
-                         gui.height//2 - text_height//2)
+        text_location = (self.window.get_width() // 2 - text_width // 2,
+                         self.window.get_height() // 2 - text_height // 2)
 
         dots_text = font.render("." * dots, True, self.text_color)
 
         self.window.blit(turn, text_location)
-        dots_location = (gui.width // 2 + text_width//2,
-                         gui.height//2 - text_height//2)
+        dots_location = (self.window.get_width() // 2 + text_width // 2,
+                         self.window.get_height() // 2 - text_height // 2)
         self.window.blit(dots_text, dots_location)
 
     def draw_who_win(self) -> None:
-        text_location = (gui.width // 2 - 100, gui.height - 90)
+        text_location = (self.window.get_width() // 2 - 100,
+                         self.window.get_height() - 90)
 
-        text = f"The game has ended, the player {self.game_status['win']} has won!"
+        text = (f"The game has ended, the player "
+                f"{self.game_status['win']} has won!")
         win = self.font.render(text, True, self.text_color)
         self.window.blit(win, text_location)
 
+    def draw_last_used_card(self):
+        card = self.game_status["last_used"]
+        if card:
+            card_name = card["name"]
+            image = pygame.image.load(f"assets/cards/{card_name}.png")
+            image = pygame.transform.scale(image, Client.CARD_SIZE)
+
+            self.window.blit(image,
+                             (self.window.get_width() // 2 - Client.CARD_WIDTH // 2, 100))
+
+            if card["action"] == "replace":
+                font = pygame.font.SysFont('arial', 28, bold=True)
+                discard_text = font.render("DISCARD", True, (255, 0, 0))
+                discard_text.set_alpha(127)
+                width = font.size("DISCARD")[0]
+                pos = (self.window.get_width() // 2 - width // 2,
+                       100 + Client.CARD_HEIGHT // 2)
+                self.window.blit(discard_text, pos)
+
     def draw_castles(self):
-        player_height = max(1, self.game_status["player_state"]["castle"] / 100 * 400)
-        enemy_height = max(1, self.game_status["enemy_state"]["castle"] / 100 * 400)
+        scale = self.window.get_height() // 3
+        loc_y = (self.window.get_height() * 6) // 10
+
+        player_state = self.game_status["player"]["state"]
+        enemy_state = self.game_status["enemy"]["state"]
+        player_height = max(1, player_state["castle"] / 100 * scale)
+        enemy_height = max(1, (enemy_state["castle"] / 100) * scale)
 
         castle_img_path = "assets/castle.png"
-        player_castle = pygame.image.load(castle_img_path)
-        player_castle = pygame.transform.scale(player_castle, (150, player_height))
+        castle = pygame.image.load(castle_img_path)
+        width = 150
 
-        enemy_castle = pygame.image.load(castle_img_path)
-        enemy_castle = pygame.transform.scale(enemy_castle, (150, enemy_height))
+        player_castle = pygame.transform.scale(castle, (width, player_height))
+        enemy_castle = pygame.transform.scale(castle, (width, enemy_height))
+        d = 80
+        self.window.blit(player_castle,
+                         (self.window.get_width() // 2 - (width + d),
+                          loc_y - player_height))
+        self.window.blit(enemy_castle,
+                         (self.window.get_width() // 2 + d,
+                          loc_y - enemy_height))
 
-        self.window.blit(player_castle, (gui.width//2 - 200, 550 - player_height))
-        self.window.blit(enemy_castle, (gui.width//2 + 50, 550 - enemy_height))
+        side = width // 10
+        fence_img = pygame.image.load("assets/fence.jpg")
+        img = pygame.transform.scale(fence_img, (side, side))
 
-    def get_click(self, mouse_pos):
-        if self.game_status == "Game did not start yet":
-            return None
+        pl_fence_h = int((player_state["fence"] / 100) * scale)
+        en_fence_h = int((enemy_state["fence"] / 100) * scale)
 
-        if isinstance(self.game_status, str) and self.game_status.startswith(
-                "End of Game"):
-            return None
+        for fence_h,  x_pos in [(pl_fence_h, self.window.get_width()//2 - d + side),
+                                (en_fence_h, self.window.get_width()//2 + d - 2*side)]:
+            squares = fence_h // side
+            for i in range(1, squares+1):
+                self.window.blit(img, (x_pos, loc_y - i*side))
+            remainder = fence_h % side
+            if remainder > 0:
+                cropped = img.subsurface((0, side-remainder, side, remainder))
+                y = loc_y - (squares+1)*side + side-remainder
+                self.window.blit(cropped, (x_pos, y))
 
+    def get_click(self, mouse_pos):  # todo: nooby method to change (button to replace)
         mouse_x, mouse_y = mouse_pos
 
-        check_button_width, check_button_height = gui.button_size
+        button_width, button_height = gui.button_size
 
-        check_button_x, check_button_y = gui.button_check_location
+        button_x, button_y = gui.skip_button_location
 
-        if check_button_x <= mouse_x <= check_button_x + check_button_width and \
-                check_button_y <= mouse_y <= check_button_y + check_button_height:
+        if (button_x <= mouse_x <= button_x + button_width and
+                button_y <= mouse_y <= button_y + button_height):
             return "skip"
 
         return None
@@ -249,14 +279,18 @@ class Client:
     def start(self, ip='localhost', port=5556):
         """Initialize gui and connection to the server, and run the game.
         """
+        icon = pygame.image.load("assets/castle.png")
+        icon = pygame.transform.scale(icon, (32, 32))
 
+        pygame.display.set_icon(icon)
         pygame.display.set_caption(gui.title)
         pygame.font.init()
-        self.font = pygame.font.SysFont('arial', 30, bold=True)
+        self.font = pygame.font.SysFont('arial', self.font_size, bold=True)
 
-        self.start_button = gui.OptionBox(gui.width//2 - 100, 50,
-                                          200, 40, (150, 150, 150),
-                                          (100, 200, 255), self.font,
+        self.start_button = gui.OptionBox(self.window.get_width() // 2 - 100,
+                                          50, 200, 40,
+                                          (150, 150, 150), (100, 200, 255),
+                                          self.font,
                                           ["Ready?", "Start", "Wait"])
 
         client = Network(ip, port)
@@ -265,19 +299,15 @@ class Client:
         client.close()
 
     def main_loop(self, client) -> None:
-        """Handle game events, and display gui.
 
-        :param client: Network object used to connect to the server.
-        """
         action = ["get"]
 
         clock = pygame.time.Clock()
         client.send("name " + self.name)
         t0 = time.time()
         dummy_timer = 0
-
         while True:
-            clock.tick(gui.fps)
+            # clock.tick(gui.fps)
 
             client.send(action[0])
             action[0] = "get"
@@ -290,8 +320,12 @@ class Client:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     return
-
-                if event.type == pygame.MOUSEBUTTONUP:
+                elif event.type in [pygame.WINDOWRESIZED,
+                                    pygame.WINDOWSIZECHANGED]:
+                    w, h = event.x, event.y
+                    self.background = pygame.transform.scale(self.bg_image,
+                                                             (w, h))
+                elif event.type == pygame.MOUSEBUTTONUP:
                     mouse_pos = pygame.mouse.get_pos()
                     mouse_button = event.button
 
@@ -307,7 +341,7 @@ class Client:
                         else:
                             action[0] = "get"
 
-            self.window.blit(gui.background_image, (0, 0))
+            self.window.blit(self.background, (0, 0))
 
             if not game_status["start"]:
                 self.start_button.selected = 0
@@ -351,4 +385,3 @@ class Client:
                 self.create_card_buttons()
 
             pygame.display.update()
-
