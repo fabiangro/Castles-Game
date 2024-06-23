@@ -68,7 +68,7 @@ def save_card_image(card):
         draw.text((stock_x, stock_y), str(value), font=font_name,
                   fill=(0, 0, 0),  stroke_fill=(0, 0, 0))
 
-    image.save(f'assets/{file_name}.png')
+    image.save(f'assets/cards/{file_name}.png')
 
 
 with open("game/cards.jsonl", 'r') as file:

@@ -135,7 +135,6 @@ class AntsGame:
             action_type = action[1]  # 'use' or 'replace'
             card_index = int(action[2])  # card index from current player hand
             card = current_player.hand[card_index]
-            print(action_type)
             if action_type == "use" and current_player.can_be_played(card):
                 self.player_use_card(current_player, enemy_player, card)
             elif action_type == "replace":
@@ -163,18 +162,18 @@ class AntsGame:
 
         game_status = {
             "start": self.has_started,
+            "win": self.win,
             "lost": current_player.lost,
-            "name": current_player.name,
-            "enemy_name": enemy_player.name if enemy_player else None,
+            "turn": self.turn == self.player_index_by_player(current_player),
+            "player": {"state": current_player.resources,
+                       "name": current_player.name},
+            "enemy": {"state": enemy_player.resources if enemy_player else None,
+                      "name": enemy_player.name if enemy_player else None},
             "hand": [{"name": card.name,
                       "can_be_used": current_player.can_be_played(card)}
                      for card in current_player.hand],
-            "win": self.win,
-            "player_state": current_player.resources,
-            "enemy_state": enemy_player.resources if enemy_player else None,
-            "turn": self.turn == self.player_index_by_player(current_player),
-            "ready": f"Waiting for players {self.ready_players()}/2",
-            "last_used": self.last_used_card
+            "last_used": self.last_used_card,
+            "ready": f"Waiting for players {self.ready_players()}/2"
         }
         return game_status
 
